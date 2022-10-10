@@ -4,6 +4,31 @@
   
   
   <entry>
+    <title>《Concurrent  Programming in Java》读书笔记</title>
+    <link href="/2022/10/10/%E3%80%8AConcurrent%20%20Programming%20in%20Java%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/"/>
+    <url>/2022/10/10/%E3%80%8AConcurrent%20%20Programming%20in%20Java%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/</url>
+    
+    <content type="html"><![CDATA[<h1 id="面向对象的并发编程"><a href="#面向对象的并发编程" class="headerlink" title="面向对象的并发编程"></a>面向对象的并发编程</h1><p>介绍Java并发的三种概念：</p><p><strong>独占（Exclusion）：</strong>可以通过组织多个并发行为间的有害干扰来维护对象状态的一致性。通常使用<strong>同步（<code>synchronized</code>）</strong>的方法。</p><p><strong>状态依赖（State Dependency）：</strong>是否可以触发、组织、延迟或是恢复某些行为是由一些对象是否处在这些行为可鞥成功或是已成功的状态上决定的。通常状态依赖关系使用<strong>监视器</strong>（<code>monitor</code>）的方法实现，such as <code>wait()</code>,<code>notify()</code>。</p><p>**创建线程（Creating Threads）:**使用线程对象来创建和管理并发操作。</p><p>使用一些简单的规则来定义同步的问题：</p><p>· 只在更新对象的成员变量时加锁</p><p>· 只在访问有可能更新的成员变量时加锁</p><p>· 不要在调用其他对象的方法时加锁</p><blockquote><p>前两个是在读写变量时加锁，第三个是可能会出现死锁（双方都同时加锁）</p></blockquote><h2 id="线程机制"><a href="#线程机制" class="headerlink" title="线程机制"></a>线程机制</h2><h3 id="构造方法"><a href="#构造方法" class="headerlink" title="构造方法"></a>构造方法</h3><p>线程的构造方法中包含三个参数：</p><p>—— <code>Runnable</code>对象：<code>Thread.start</code>方法会调用该对象的<code>run</code>方法，若不传递该参数，会运行<code>Thread.run</code></p><p>——<code> String</code>对象：作为<code>Thread</code>对象的名称</p><p>—— <code>ThreadGroup</code>对象：放置新的<code>Thread</code>，如果没有显式指定，那么默认将⽗线程 （当前执⾏<code>new Thread</code>的线程）线程组设置为⾃⼰的线程组。</p><blockquote><p><code>ThreadGroup</code>类的方法都是以线程组操作为目的的，包括设置线程组中线程的最大优先级方法、将线程组中所有线程挂起或恢复到可运行状态的方法、终止线程组中所有线程的方法等。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> resume（）； <span class="hljs-comment">//使被挂起的当前组内的线程恢复到可运行状态</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">setDaemon</span> <span class="hljs-params">(<span class="hljs-type">boolean</span> daemon)</span>; <span class="hljs-comment">//指定一个线程为当前线程组的监护线程</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> setMaxPriority（<span class="hljs-type">int</span> pri）； <span class="hljs-comment">//设置当前线程组允许的最大优先级</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> stop（）；<span class="hljs-comment">//终止当前线程组中所有线程</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> suspend（）; <span class="hljs-comment">//挂起当前线程组中所有线程</span><br><span class="hljs-keyword">public</span> String toStrinng（）; <span class="hljs-comment">//将当前线程组转换为String类的对象 </span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">uncaughtException</span><span class="hljs-params">(Thread t,Throwable e)</span>; <span class="hljs-comment">//当一个线程组中的线程由于未被捕捉的异常而导致终止时，该方法会被调用，会打印出当前的堆栈跟踪信息（stack trace）</span><br></code></pre></td></tr></table></figure></blockquote><p>通常的策略是把<code>Runnable</code>接口当做一个单独的类来实现，并把它作为参数传递给一个<code>Thread</code>的构造函数。</p><p>也可以继承<code>Thread</code>的子类来实现线程。</p><h3 id="控制方法"><a href="#控制方法" class="headerlink" title="控制方法"></a>控制方法</h3><p> 每一个线程都对应一个中断（interruption）状态，用布尔变量表示，通过调用<code>Thread.interrupt()</code>方法使该变量设置为<code>true</code>。但在其处理<code>Thread.wait() </code> <code>Thread.sleep()</code> <code>Thread.join()</code> 方法时调用该方法会抛出异常，线程将被设置为<code>false</code>。</p><p><code>Thread.yield()</code>是Thread的一个静态方法，用来告知JVM若系统中有处在未运行状态的活动线程，那么调度程序可以从这些线程中选择一个运行而放弃当前的线程，JVM可以使用自己的方式理解这个建议。</p><h2 id="并发"><a href="#并发" class="headerlink" title="并发"></a>并发</h2><p>常见并发编程的应用：</p><p><strong>Web服务（Web Service）：</strong>多数基于套接字的Web服务都是多线程的，支持多个并发的连接可以保证当有新的连接到来时可以立即被处理，不需要等待其他连接结束，降低了延迟。</p><p><strong>数值计算</strong></p><p><strong>I&#x2F;O处理</strong></p><p><strong>模拟程序：</strong>并发程序可以用来模拟物理世界中有着独立自主行为的对象。</p><p><strong>GUI程序</strong></p><p><strong>嵌入式系统</strong></p><h3 id="并发执行构件"><a href="#并发执行构件" class="headerlink" title="并发执行构件"></a>并发执行构件</h3><p>实现并发执行有多种方式，线程只是其中一种。</p><h4 id="计算机系统"><a href="#计算机系统" class="headerlink" title="计算机系统"></a>计算机系统</h4><p>如果有一群可用的计算机系统，可以将每一个逻辑运算单元映射到一个计算机上构建一个计算机集群，该方式可以带来无限的<strong>自治性</strong>和<strong>独立性</strong>，但每个计算机之间的开销会非常昂贵，并且不能共享本地资源。</p><h4 id="进程"><a href="#进程" class="headerlink" title="进程"></a>进程</h4><h4 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h4><p><strong>共享：</strong>Java实现了线程可以共享内存，文件等类似的资源。</p><p><strong>调度：</strong></p><p><strong>通信：</strong>线程可以通过基于内存的同步机制来进行通信。</p><h4 id="任务和轻量级执行框架"><a href="#任务和轻量级执行框架" class="headerlink" title="任务和轻量级执行框架"></a>任务和轻量级执行框架</h4><p>当线程的创建和管理的开销已经成为影响程序性能的因素之一时，通过创建自己的轻量级执行框架，并加以限制（如禁止某种方式的阻塞），提供更少的调度保证，或是更少的同步和通信手段，可以进一步减少自治性来提高性能。  </p>]]></content>
+    
+    
+    <categories>
+      
+      <category>-- Java</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>-- 读后感 -- Java学习</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>《Thinking in Java》读书笔记</title>
     <link href="/2022/10/08/%E3%80%8AThinking%20in%20Java%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/"/>
     <url>/2022/10/08/%E3%80%8AThinking%20in%20Java%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/</url>
@@ -13,7 +38,7 @@
     
     <categories>
       
-      <category>Java学习</category>
+      <category>Java</category>
       
     </categories>
     
@@ -22,7 +47,7 @@
       
       <tag>读后感</tag>
       
-      <tag>Java</tag>
+      <tag>Java学习</tag>
       
     </tags>
     
