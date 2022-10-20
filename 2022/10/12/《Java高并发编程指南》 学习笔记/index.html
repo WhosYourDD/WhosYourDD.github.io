@@ -25,7 +25,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://example.com/images/Java%E9%AB%98%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E6%8C%87%E5%8D%97.png">
 <meta property="article:published_time" content="2022-10-12T13:39:55.184Z">
-<meta property="article:modified_time" content="2022-10-13T02:50:33.187Z">
+<meta property="article:modified_time" content="2022-10-20T13:52:17.483Z">
 <meta property="article:author" content="Yang Boqing">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="http://example.com/images/Java%E9%AB%98%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E6%8C%87%E5%8D%97.png">
@@ -220,7 +220,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          4k 字
+          7.9k 字
         
       </span>
     
@@ -231,7 +231,7 @@
         
         
         
-          33 分钟
+          67 分钟
         
       </span>
     
@@ -322,10 +322,62 @@
 </ol>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">shutdown</span><span class="hljs-params">()</span> &#123;<br>    <span class="hljs-keyword">final</span> <span class="hljs-type">ReentrantLock</span> <span class="hljs-variable">mainLock</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">this</span>.mainLock;<br>    mainLock.lock();<br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">//检查是否可以关闭</span><br>        checkShutdownAccess();<br>        <span class="hljs-comment">//设置runState为SHUTDOWN，不能再添加任务，但可以执行完前面的任务</span><br>        advanceRunState(SHUTDOWN);<br>        <span class="hljs-comment">//终止空闲的线程</span><br>        interruptIdleWorkers();<br>        onShutdown(); <span class="hljs-comment">// hook for ScheduledThreadPoolExecutor</span><br>    &#125; <span class="hljs-keyword">finally</span> &#123;<br>        mainLock.unlock();<br>    &#125;<br>    tryTerminate();<br>&#125;<br></code></pre></td></tr></table></figure>
 
-<ol>
+<ol start="2">
 <li>shutdownNow方法</li>
 </ol>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> List&lt;Runnable&gt; <span class="hljs-title function_">shutdown</span><span class="hljs-params">()</span> &#123;<br>    List&lt;Runnable&gt; tasks;<br>    <span class="hljs-keyword">final</span> <span class="hljs-type">ReentrantLock</span> <span class="hljs-variable">mainLock</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">this</span>.mainLock;<br>    mainLock.lock();<br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">//检查是否可以关闭</span><br>        checkShutdownAccess();<br>        <span class="hljs-comment">//设置runState为STOP，不能再添加任务，终止所有任务</span><br>        advanceRunState(STOP);<br>        <span class="hljs-comment">//终止所有线程</span><br>        interruptWorkers();<br>        tasks = drainQueue();<br>    &#125; <span class="hljs-keyword">finally</span> &#123;<br>        mainLock.unlock();<br>    &#125;<br>    tryTerminate();<br>    <span class="hljs-comment">//该方法会返回一个workQueue中的所有线程</span><br>    <span class="hljs-keyword">return</span> tasks;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="Future任务异步结果"><a href="#Future任务异步结果" class="headerlink" title="Future任务异步结果"></a>Future任务异步结果</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">Future</span>&lt;V&gt;&#123;<br>    <span class="hljs-comment">//取消任务执行</span><br>    <span class="hljs-type">boolean</span> <span class="hljs-title function_">cancel</span><span class="hljs-params">(<span class="hljs-type">boolean</span> mayIntertuptIfRunning)</span>;<br>    <span class="hljs-type">boolean</span> <span class="hljs-title function_">isCancelled</span><span class="hljs-params">()</span>;<br>    <span class="hljs-type">boolean</span> <span class="hljs-title function_">isDone</span><span class="hljs-params">()</span>;<br>    V <span class="hljs-title function_">get</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> InterruptedException, ExecutionException;<br>    V <span class="hljs-title function_">get</span><span class="hljs-params">(<span class="hljs-type">long</span> timeout, TimeUnit unit)</span><br>        <span class="hljs-keyword">throws</span> InterruptedException, ExecutionException, TimeoutException;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="任务执行结果FutureTask"><a href="#任务执行结果FutureTask" class="headerlink" title="任务执行结果FutureTask"></a>任务执行结果FutureTask</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">FutureTask</span>&lt;V&gt; <span class="hljs-keyword">implements</span> <span class="hljs-title class_">RunnableFuture</span>&lt;V&gt;&#123;<br>	<span class="hljs-comment">//...</span><br>&#125;<br><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">RunnableFuture</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Runnable</span>,Future&lt;V&gt;&#123;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">()</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p> 在具体实现层面，线程池的工作线程和主线程之间通过状态变量<code>state</code>来通知对方当前任务的执行状态。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">FutureTask</span>&lt;V&gt; <span class="hljs-keyword">implements</span> <span class="hljs-title class_">RunnableFuture</span>&lt;V&gt;&#123;<br>    <span class="hljs-comment">//状态转换过程</span><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">	* NEW -&gt; COMPLETING -&gt; NORMAL</span><br><span class="hljs-comment">	* NEW -&gt; COMPLETING -&gt; EXCEPTIONAL</span><br><span class="hljs-comment">	* NEW -&gt; CANCELLED</span><br><span class="hljs-comment">	* NEW -&gt; INTERRUPTING -&gt; INTERRUPTED</span><br><span class="hljs-comment">    */</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">volatile</span> <span class="hljs-type">int</span> state;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">NEW</span>          <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">COMPLETING</span>   <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">NORMAL</span>       <span class="hljs-operator">=</span> <span class="hljs-number">2</span>;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">EXCEPTIONAL</span>  <span class="hljs-operator">=</span> <span class="hljs-number">3</span>;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">CANCELLED</span>    <span class="hljs-operator">=</span> <span class="hljs-number">4</span>;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">INTERRUPTING</span> <span class="hljs-operator">=</span> <span class="hljs-number">5</span>;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">INTERRUPTED</span>  <span class="hljs-operator">=</span> <span class="hljs-number">6</span>;<br>    <span class="hljs-comment">//...</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="任务的提交和返回执行结果"><a href="#任务的提交和返回执行结果" class="headerlink" title="任务的提交和返回执行结果"></a>任务的提交和返回执行结果</h3><p>在应用主线程中调用<code>submit</code>方法提交任务到<code>Executor</code>线程池框架内部的线程池，并调用异步结果封装类<code>FutureTask</code>的<code>get</code>方法阻塞获取任务执行结果。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> V <span class="hljs-title function_">get</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> InterruptedException, ExecutionException &#123;<br>    <span class="hljs-type">int</span> <span class="hljs-variable">s</span> <span class="hljs-operator">=</span> state;<br>    <span class="hljs-comment">//当线程未开始或在执行中时调用awaitDone方法</span><br>    <span class="hljs-keyword">if</span> (s &lt;= COMPLETING)<br>        <span class="hljs-comment">//线程休眠 等待执行结果</span><br>        s = awaitDone(<span class="hljs-literal">false</span>, <span class="hljs-number">0L</span>);<br>    <span class="hljs-keyword">return</span> report(s);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>在<code>FutureTask</code>内部维护了一个单向链表<code>waiters</code>，用于存放当前等待该任务执行结果的线程，在执行完成时遍历该链表，唤醒每个等待线程。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-keyword">volatile</span> WaitNode waiters;<br><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">WaitNode</span>&#123;<br>    <span class="hljs-keyword">volatile</span> Thread thread;<br>    <span class="hljs-keyword">volatile</span> WaitNode next;<br>    WaitNode()&#123;<br>        thread = Thread.currentThread();<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="ScheduledExecutorService任务周期性执行"><a href="#ScheduledExecutorService任务周期性执行" class="headerlink" title="ScheduledExecutorService任务周期性执行"></a>ScheduledExecutorService任务周期性执行</h2><p>JDK1.5之前对于周期性任务使用<code>Timer</code>类来执行，该类包含一下缺陷：</p>
+<ol>
+<li>该类中只有一个线程，所有任务都在这个线程中执行，一个任务时间长会导致另一个任务长期等待。</li>
+<li>执行过程中，一个任务的异常会导致线程退出，所有任务都会停止。</li>
+<li>该类依赖系统时间执行，系统时间变化则线程也会发生变化。</li>
+</ol>
+<p>针对该问题创建<code>ScheduledExecutorService</code>接口的实现类来解决问题。</p>
+<h2 id="Executors线程池创建工具"><a href="#Executors线程池创建工具" class="headerlink" title="Executors线程池创建工具"></a>Executors线程池创建工具</h2><p>为简化<code>ThreadPoolExecutor</code>的使用，提供额了<code>Executors</code>工具类，该类能创建特定版本的线程池对象，即在该类内部提供了创建线程池对象所需的默认参数，通过方法名来表明特定的创建，从而简化了线程池的创建。</p>
+<p><code>Executors</code>工具类主要关注线程池的<strong>线程数量</strong>和<strong>任务等待队列</strong>的定义，具体分为线程数量的固定时，等待队列无界和线程数量无界；其中等待队列无界应用于对实时性要求不高的场景，此时不会因为任务太多而创建大量的线程；线程数量无界应用于实时性要求高的场景，对每一个任务都会调度一个空闲线程或创建一个新线程来执行。</p>
+<h2 id="ForkJoin任务分解与并行执行框架"><a href="#ForkJoin任务分解与并行执行框架" class="headerlink" title="ForkJoin任务分解与并行执行框架"></a>ForkJoin任务分解与并行执行框架</h2><p>该框架是JDK1.7推出的，主要目的是实现任务的自动化递归拆分，支持将一个大任务拆分为多个小任务，然后交给线程池的多个线程进行处理。</p>
+<p>从任务的角度来看，大任务分为多个小任务，由于任务数量常常多于线程数量，因此拆分的小任务会被分到多个工作队列中等待线程处理。</p>
+<p>从线程池的角度看，<code>ForkJoinPool</code>线程池内的线程会关联这些工作队列，同时线程之间支持任务窃取，即空闲线程可以窃取其他线程工作队列的任务来处理，从而提高线程池效率。在窃取方面，为了减少线程之间的竞争，工作队列采用双端队列的方式实现，即工作队列的拥有者从头部获取任务，窃取任务的线程从尾部获取任务。</p>
+<h1 id="第八章-分布式系统设计理论"><a href="#第八章-分布式系统设计理论" class="headerlink" title="第八章 分布式系统设计理论"></a>第八章 分布式系统设计理论</h1><h2 id="系统架构演进"><a href="#系统架构演进" class="headerlink" title="系统架构演进"></a>系统架构演进</h2><p>应用系统架构的演进都是随着业务的发展而变化的，业务开发初期系统的用户量和访问量都比较小，因此可以采用单体应用架构。而当用户量和访问量增大时，就需要采用分布式架构和集群部署的方式。</p>
+<h3 id="单体应用架构"><a href="#单体应用架构" class="headerlink" title="单体应用架构"></a>单体应用架构</h3><p>该模式下耦合性较高，修改bug和部署系统时都需要将整个系统都重新启动和部署。</p>
+<h3 id="分布式应用架构"><a href="#分布式应用架构" class="headerlink" title="分布式应用架构"></a>分布式应用架构</h3><p><strong>优点</strong></p>
+<p>分布式应用架构是指将一个系统的多个模块拆分为多个子服务，每个子服务都使用一个独立进程来部署，并且一般部署在不同的机器节点。该方案具有较好的拓展性，以及更高的并发性和安全性。</p>
+<p><strong>缺点</strong></p>
+<p>分布式系统每个子服务的通信比较依赖网络传输。</p>
+<h3 id="集群"><a href="#集群" class="headerlink" title="集群"></a>集群</h3><p><strong>分布式与集群的区别</strong></p>
+<p>分布式通产是指如何将一个系统拆分为多个子服务或者多个子系统，各个子服务独立部署在一个进程里，如果这些子服务都只部署一个实例，则这个系统是分布式系统。</p>
+<p>集群式是指同一个服务在在不同机器节点上部署多次，这些机器节点提供相同的服务，并且通过负载均衡机制将对该服务的请求分散到各个节点。即集群是通过实现系统的横向拓展来应对高并发请求和提高系统的吞吐量的。</p>
+<p>单体应用架构和分布式应用架构都可以通过集群的方式来部署。</p>
+<h2 id="分布式理论"><a href="#分布式理论" class="headerlink" title="分布式理论"></a>分布式理论</h2><p>在分布式系统中由于需要将一个系统的多个功能模块拆分为多个子服务，每个子服务以独立进程部署，子服务之间通过网络进行通信，由于网络传输不稳定和数据传输延迟的问题，子服务之间常会出现无法通信或通信延迟。</p>
+<p>其次在<strong>单体应用架构</strong>中，一个请求可能会调用多个功能模块来处理，由于是发生在同一个进程内，因此可以基于数据库的事务机制来保证数据的强一致性。</p>
+<p>在<strong>分布式系统设计</strong>中，针对数据不一致的情况，要么是所有子服务都执行成功才提交此数据的修改，在此期间服务将会被占用，不能响应其他请求；要么各自执行自己的服务，时候再检查是否都成功，如果存在某些失败，那么采用一些补偿机制来保证数据一致性。</p>
+<h3 id="CAP理论"><a href="#CAP理论" class="headerlink" title="CAP理论"></a>CAP理论</h3><p>CAP理论时指出在分布式系统设计中存在<strong>数据强一致性</strong>和<strong>服务高可用</strong>的两个指标，以及一个不可避免的网络分区缺陷，网络分区对应的网络分区容忍。</p>
+<p>首先数据一致性和服务高可用在分布式系统中是不能同时存在的。 </p>
+<p>在传统CAP理论中，数据强一致性通常是指在分布式存储系统中，数据存储直接点与多个备份节点数据在任何时候都需要保持一致。任何时候，客户端需要请求某项数据时，可以访问任意一个节点，即主节点或者备份节点都会返回相同的数据。</p>
+<p>服务高可用是指客户端在任何时候需要获取某项数据时，都可以随时访问对应的数据存储节点，并且数据存储节点都可以成功返回该数据。</p>
+<h3 id="BASE理论"><a href="#BASE理论" class="headerlink" title="BASE理论"></a>BASE理论</h3><p>BASE理论可以看做是CAP理论的延伸，CAP理论只是说明了两者不能同时存在，并没有提出解决方法，BASE理论则提出了方案。该理论通过一种折中的方式，通过牺牲数据强一致性，来保证服务可用性，即允许数据在一段时间内是不一致的，在一段时间以后会恢复一致。</p>
+<p><strong>基于可用BA：</strong>不是完全不可用，而是服务质量会有所损失。</p>
+<p><strong>软状态S：</strong>允许在某一个有限的时间内，数据存在中间状态。</p>
+<p><strong>最终一致性E</strong></p>
+<p>在进行分布式系统设计时，可基于BASE理论来分析当前的分布式系统是否能够满足BASE理论的三个条件：基本可用，软状态和最终一致性。如果满足，说明该系统在出现网络分区时可以保持服务的可用性。</p>
+<h2 id="高并发"><a href="#高并发" class="headerlink" title="高并发"></a>高并发</h2><p>现代互联网中，尤其是大型网站，访问量和客户量都十分庞大，因此大多都会采用分布式应用架构和集群部署方案。具体为通过分布式架构拆分出多个子服务来提高系统的横向拓展性，再通过集群部署提高每个服务的吞吐量和可用性。</p>
+<p>在服务器的集群部署中，由于存在多个节点可以响应一个服务的请求，因此会存在一种负载均衡机制来对该服务的请求分散到这些节点中， 从而实现集群的横向拓展性和提高服务的整体吞吐量。</p>
+<p>除了设计分布式应用架构和集群部署之外，在应用层面也要有所优化，首先，在高并发访问中最有可能出现性能瓶颈的就是数据库，因此通过增加分布式缓存减少对数据库的访问来解决数据库的性能瓶颈问题。其次通过请求的异步处理来加快请求的响应速度，提高系统的吞吐量。具体实现可以通过消息队列缓冲请求实现。</p>
+
                 
               </div>
             
